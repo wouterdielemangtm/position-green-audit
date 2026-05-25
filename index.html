@@ -137,7 +137,7 @@
     <div class="client-bar">
       <div class="client-field"><div class="client-label">Company</div><div class="client-val">Position Green</div></div>
       <div class="client-field"><div class="client-label">Prepared by</div><div class="client-val">GTM Collective</div></div>
-      <div class="client-field"><div class="client-label">Date</div><div class="client-val" id="audit-date"></div></div>
+      <div class="client-field"><div class="client-label">Date</div><input type="text" id="audit-date" class="client-val" style="background:transparent;border:none;outline:none;color:rgba(255,255,255,.9);font-family:var(--font-body);font-size:13px;font-weight:600;width:120px;cursor:text;" /></div>
       <div class="client-field"><div class="client-label">Overall grade</div><div class="client-val" id="overall-score">—</div></div>
     </div>
   </div>
@@ -409,7 +409,7 @@ function updateSectionGrade(sectionId){
 
 // ── SUPABASE HELPERS ─────────────────────────────────────────
 async function getOrCreateAudit(clientId){
-  const {data}=await db.from('audits').select('id,overall_summary').eq('client_id',clientId).maybeSingle();
+  const {data}=await db.from('audits').select('id,overall_summary,audit_date').eq('client_id',clientId).maybeSingle();
   if(data) return data;
   const {data:created}=await db.from('audits').insert({client_id:clientId,overall_summary:''}).select().single();
   return created;
@@ -602,7 +602,18 @@ document.getElementById('nav').addEventListener('click',e=>{
 });
 
 // ── INIT ─────────────────────────────────────────────────────
-document.getElementById('audit-date').textContent=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+// ── DATE ─────────────────────────────────────────────────────
+const dateInput = document.getElementById('audit-date');
+dateInput.value = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+let dateTimer;
+dateInput.addEventListener('input', e => {
+  clearTimeout(dateTimer);
+  dateTimer = setTimeout(async () => {
+    if(!auditId) return;
+    await db.from('audits').update({audit_date: e.target.value, updated_at: new Date().toISOString()}).eq('id', auditId);
+    showSave();
+  }, 800);
+});
 
 Object.entries(SECTION_ITEMS).forEach(([sid,groups])=>groups.forEach(g=>renderItems('items-'+g,DATA[g],sid)));
 
@@ -611,6 +622,7 @@ Object.entries(SECTION_ITEMS).forEach(([sid,groups])=>groups.forEach(g=>renderIt
   const audit=await getOrCreateAudit(clientId);
   auditId=audit.id;
   if(audit.overall_summary) overallTA.value=audit.overall_summary;
+  if(audit.audit_date) dateInput.value=audit.audit_date;
   await loadSavedData();
 })();
 </script>
