@@ -21,12 +21,12 @@
     .app{max-width:860px;margin:0 auto;padding-bottom:80px}
 
     /* DATE INPUT */
-    .date-input{background:transparent;border:none;outline:none;box-shadow:none;-webkit-appearance:none;color:rgba(255,255,255,.9);font-family:var(--font-body);font-size:13px;font-weight:600;width:130px;cursor:text;padding:0}
-    .date-input::placeholder{color:rgba(255,255,255,.35)}
-    .date-input:focus{border-bottom:1px solid rgba(255,255,255,.3)}
+    .date-input{background:transparent;border:none;outline:none;box-shadow:none;color:rgba(255,255,255,.9);font-family:var(--font-body);font-size:13px;font-weight:600;width:150px;cursor:pointer;padding:0;-webkit-appearance:none;color-scheme:dark}
+    .date-input::-webkit-calendar-picker-indicator{filter:invert(1) opacity(0.5);cursor:pointer;margin-left:4px}
+    .date-input:focus{outline:none}
     /* SAVE INDICATOR */
-    .save-indicator{margin-left:auto;align-self:flex-end;font-family:var(--font-body);font-size:11px;font-weight:600;color:rgba(255,255,255,.0);transition:color .3s;padding-bottom:2px;letter-spacing:.02em}
-    .save-indicator.show{color:rgba(255,255,255,.5)}
+    .save-indicator{margin-left:auto;align-self:center;font-family:var(--font-body);font-size:11px;font-weight:600;color:transparent;transition:color .3s;letter-spacing:.02em}
+    .save-indicator.show{color:#F97E2A}
 
     /* HEADER */
     .header{background:var(--client);padding:28px 32px 22px}
@@ -141,7 +141,7 @@
     <div class="client-bar">
       <div class="client-field"><div class="client-label">Company</div><div class="client-val">Position Green</div></div>
       <div class="client-field"><div class="client-label">Prepared by</div><div class="client-val">GTM Collective</div></div>
-      <div class="client-field"><div class="client-label">Date</div><input type="text" id="audit-date" class="client-val date-input" placeholder="25 May 2026" /></div>
+      <div class="client-field"><div class="client-label">Date</div><input type="date" id="audit-date" class="client-val date-input" /></div>
       <div class="client-field"><div class="client-label">Overall grade</div><div class="client-val" id="overall-score">—</div></div>
       <div class="save-indicator" id="save-bar">✓ Saved</div>
     </div>
@@ -608,7 +608,7 @@ document.getElementById('nav').addEventListener('click',e=>{
 // ── INIT ─────────────────────────────────────────────────────
 // ── DATE ─────────────────────────────────────────────────────
 const dateInput = document.getElementById('audit-date');
-dateInput.value = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+const today = new Date(); dateInput.value = today.toISOString().split('T')[0];
 let dateTimer;
 dateInput.addEventListener('input', e => {
   clearTimeout(dateTimer);
