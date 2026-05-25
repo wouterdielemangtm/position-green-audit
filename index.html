@@ -1,7 +1,625 @@
 <!DOCTYPE html>
 <html lang="en"><!DOCTYPE html>
 <html lang="en">
+<head><!DOCTYPE html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Position Green — HubSpot Portal Audit | GTM Collective</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --client:#003F39;--client-light:rgba(0,63,57,0.08);
+      --gtm:#1D1235;--orange:#F97E2A;--bg:#f5f7f6;--border:rgba(0,63,57,0.12);
+      --s1-bg:#FCEBEB;--s1:#A32D2D;--s2-bg:#FAEEDA;--s2:#854F0B;
+      --s3-bg:#fff3e0;--s3:#b45309;--s4-bg:#EAF3DE;--s4:#3B6D11;
+      --s5-bg:#E1F5EE;--s5:#0F6E56;
+      --font-brand:'Century Gothic','Trebuchet MS',sans-serif;
+      --font-body:'DM Sans',system-ui,sans-serif;
+    }
+    body{font-family:var(--font-body);background:var(--bg);color:var(--client);min-height:100vh}
+    .app{max-width:860px;margin:0 auto;padding-bottom:80px}
+
+    /* SAVE INDICATOR */
+    .save-bar{position:fixed;bottom:20px;right:20px;background:var(--client);color:#fff;font-family:var(--font-body);font-size:12px;font-weight:600;padding:8px 16px;border-radius:20px;opacity:0;transition:opacity .3s;z-index:999;pointer-events:none}
+    .save-bar.show{opacity:1}
+
+    /* HEADER */
+    .header{background:var(--client);padding:28px 32px 22px}
+    .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .logo-wrap{display:flex;align-items:center;gap:10px}
+    .logo-client{font-family:var(--font-brand);font-size:13px;font-weight:700;color:#fff;letter-spacing:.06em;text-transform:uppercase}
+    .logo-divider{width:1px;height:16px;background:rgba(255,255,255,.25)}
+    .logo-gtm{font-family:var(--font-brand);font-size:10px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase}
+    .header-badge{background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);font-family:var(--font-body);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:.05em;text-transform:uppercase}
+    .header h1{font-family:var(--font-brand);font-size:21px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+    .header-sub{font-family:var(--font-body);font-size:12px;color:rgba(255,255,255,.45)}
+    .client-bar{display:flex;gap:24px;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1);flex-wrap:wrap}
+    .client-field{display:flex;flex-direction:column;gap:2px}
+    .client-label{font-family:var(--font-body);font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em}
+    .client-val{font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,.9);font-weight:600}
+
+    /* LEGEND */
+    .score-legend{display:flex;align-items:center;gap:8px;padding:11px 32px;background:#fff;border-bottom:1px solid var(--border);flex-wrap:wrap}
+    .legend-label{font-family:var(--font-body);font-size:11px;color:rgba(0,63,57,.45);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-right:2px}
+    .score-pill{font-family:var(--font-body);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+    .s1p{background:var(--s1-bg);color:var(--s1)}.s2p{background:var(--s2-bg);color:var(--s2)}
+    .s3p{background:var(--s3-bg);color:var(--s3)}.s4p{background:var(--s4-bg);color:var(--s4)}
+    .s5p{background:var(--s5-bg);color:var(--s5)}
+
+    /* OVERALL EXEC SUMMARY */
+    .overall-summary{background:var(--client);padding:20px 32px;border-bottom:3px solid var(--orange)}
+    .overall-summary-inner{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:14px 16px}
+    .overall-summary-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .overall-summary-label{font-family:var(--font-body);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.5)}
+    .overall-summary-label span{color:var(--orange)}
+    .overall-summary-grade{font-family:var(--font-brand);font-size:13px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.04em}
+    .overall-summary-grade span{color:#fff}
+    .overall-summary-text{font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,.8);line-height:1.65;outline:none;min-height:48px;width:100%;background:transparent;border:none;resize:none;caret-color:#fff}
+    .overall-summary-text::placeholder{color:rgba(255,255,255,.22)}
+
+    /* NAV */
+    .nav{display:flex;gap:2px;padding:0 32px;background:#fff;border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:0;z-index:100}
+    .nav-tab{font-family:var(--font-brand);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:12px 14px 11px;border-bottom:2px solid transparent;cursor:pointer;color:rgba(0,63,57,.38);white-space:nowrap;transition:color .15s}
+    .nav-tab:hover{color:var(--client)}.nav-tab.active{color:var(--client);border-bottom-color:var(--client)}
+
+    /* SECTION */
+    .section{display:none;padding:0 0 24px}.section.active{display:block}
+    .section-hero{background:var(--client);padding:22px 32px 20px;border-bottom:3px solid var(--orange)}
+    .section-hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+    .section-hero-title{font-family:var(--font-brand);font-size:15px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+    .section-hero-desc{font-family:var(--font-body);font-size:12px;color:rgba(255,255,255,.45);line-height:1.5}
+    .section-grade-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:8px 14px;text-align:center;flex-shrink:0}
+    .section-grade-num{font-family:var(--font-brand);font-size:20px;font-weight:700;color:#fff;line-height:1}
+    .section-grade-lbl{font-family:var(--font-body);font-size:10px;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.09em;margin-top:3px}
+    .exec-summary{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:12px 14px}
+    .exec-summary-label{font-family:var(--font-body);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--orange);margin-bottom:8px}
+    .exec-summary-text{font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,.78);line-height:1.65;outline:none;min-height:40px;width:100%;background:transparent;border:none;resize:none;caret-color:#fff}
+    .exec-summary-text::placeholder{color:rgba(255,255,255,.22)}
+
+    /* BODY */
+    .section-body{padding:24px 32px}
+    .subsection{margin-bottom:26px}
+    .subsection-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+    .subsection-dot{width:7px;height:7px;border-radius:50%;background:var(--client);flex-shrink:0}
+    .subsection-title{font-family:var(--font-brand);font-size:12px;font-weight:700;color:var(--client);text-transform:uppercase;letter-spacing:.07em}
+
+    /* AUDIT ITEM */
+    .audit-item{background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden}
+    .audit-item-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px}
+    .audit-item-label{font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--client);flex:1;line-height:1.35}
+    .grade-wrap{display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .grade-lbl{font-family:var(--font-body);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:rgba(0,63,57,.38)}
+    .grade-select{font-family:var(--font-body);font-weight:600;border-radius:20px;padding:4px 10px;cursor:pointer;outline:none;min-width:130px;border:none}
+    .audit-item-body{padding:0 14px 16px;border-top:1px solid var(--border)}
+    .audit-item-body-inner{padding-top:12px;display:flex;flex-direction:column;gap:10px}
+
+    /* GTM NOTES */
+    .note-block{display:flex;flex-direction:column;gap:5px;padding:10px 12px;background:#f8f7fc;border:1px solid rgba(29,18,53,.1);border-radius:7px}
+    .note-block-header{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+    .note-author-dot{width:6px;height:6px;border-radius:50%;background:var(--gtm);flex-shrink:0}
+    .note-label{font-family:var(--font-body);font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:rgba(29,18,53,.45);font-weight:700}
+    .note-input{font-family:var(--font-body);font-size:12.5px;color:var(--gtm);background:transparent;border:none;outline:none;resize:vertical;min-height:36px;width:100%;line-height:1.5;padding:0}
+    .note-input::placeholder{color:rgba(29,18,53,.28)}
+
+    /* CLIENT COMMENT */
+    .client-block{display:flex;flex-direction:column;gap:5px;padding:10px 12px;background:rgba(0,63,57,.04);border:1px solid rgba(0,63,57,.15);border-radius:7px}
+    .client-block-header{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+    .client-author-dot{width:6px;height:6px;border-radius:50%;background:var(--client);flex-shrink:0}
+    .client-note-label{font-family:var(--font-body);font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:rgba(0,63,57,.5);font-weight:700}
+    .client-input{font-family:var(--font-body);font-size:12.5px;color:var(--client);background:transparent;border:none;outline:none;resize:vertical;min-height:36px;width:100%;line-height:1.5;padding:0}
+    .client-input::placeholder{color:rgba(0,63,57,.28)}
+
+    /* BEST PRACTICE */
+    .bp-box{background:#fdf6f0;border-left:3px solid var(--orange);border-radius:0 6px 6px 0;padding:8px 12px}
+    .bp-label{font-family:var(--font-body);font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--orange);font-weight:700;margin-bottom:3px}
+    .bp-text{font-family:var(--font-body);font-size:12px;color:rgba(0,63,57,.6);line-height:1.6}
+
+    .toggle-body{display:none}.toggle-body.open{display:block}
+    .expand-btn{background:none;border:none;cursor:pointer;padding:0 4px;color:rgba(0,63,57,.3);font-size:16px;line-height:1;flex-shrink:0;transition:color .15s}
+    .expand-btn:hover{color:var(--client)}
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-top">
+      <div class="logo-wrap">
+        <div class="logo-client">Position Green</div>
+        <div class="logo-divider"></div>
+        <div class="logo-gtm">GTM Collective</div>
+      </div>
+      <div class="header-badge">HubSpot Audit</div>
+    </div>
+    <h1>Portal Health Audit</h1>
+    <div class="header-sub">Prepared by GTM Collective — gtmcollective.ai — confidential</div>
+    <div class="client-bar">
+      <div class="client-field"><div class="client-label">Company</div><div class="client-val">Position Green</div></div>
+      <div class="client-field"><div class="client-label">Prepared by</div><div class="client-val">GTM Collective</div></div>
+      <div class="client-field"><div class="client-label">Date</div><div class="client-val" id="audit-date"></div></div>
+      <div class="client-field"><div class="client-label">Overall grade</div><div class="client-val" id="overall-score">—</div></div>
+    </div>
+  </div>
+
+  <div class="score-legend">
+    <span class="legend-label">Grade key:</span>
+    <span class="score-pill s1p">1 — Critical issue</span>
+    <span class="score-pill s2p">2 — Needs work</span>
+    <span class="score-pill s3p">3 — Partial</span>
+    <span class="score-pill s4p">4 — Good</span>
+    <span class="score-pill s5p">5 — Best practice</span>
+  </div>
+
+  <div class="overall-summary">
+    <div class="overall-summary-inner">
+      <div class="overall-summary-top">
+        <div class="overall-summary-label"><span>GTM Collective</span> — Overall executive summary</div>
+        <div class="overall-summary-grade">Overall grade: <span id="overall-score-summary">—</span></div>
+      </div>
+      <textarea class="overall-summary-text" id="overall-summary-input" placeholder="Summarise the overall portal health, key priorities, and top recommendations across all sections…" rows="3"></textarea>
+    </div>
+  </div>
+
+  <div class="nav" id="nav">
+    <div class="nav-tab active" data-section="pipelines">1. Pipelines</div>
+    <div class="nav-tab" data-section="lifecycle">2. Lifecycle & handover</div>
+    <div class="nav-tab" data-section="reporting">3. Reporting</div>
+    <div class="nav-tab" data-section="datahealth">4. Data health</div>
+    <div class="nav-tab" data-section="billing">5. Licenses & credits</div>
+  </div>
+
+  <div class="section active" id="pipelines">
+    <div class="section-hero">
+      <div class="section-hero-top">
+        <div class="section-hero-left">
+          <div class="section-hero-title">Pipelines</div>
+          <div class="section-hero-desc">Deal pipeline structure, lead pipeline setup, stage logic and automation coverage.</div>
+        </div>
+        <div class="section-grade-badge"><div class="section-grade-num" id="grade-pipelines">—</div><div class="section-grade-lbl">Section grade</div></div>
+      </div>
+      <div class="exec-summary"><div class="exec-summary-label">Executive summary & recommendations</div><textarea class="exec-summary-text" data-section="pipelines" placeholder="Summarise key findings and top recommendations for this section…" rows="3"></textarea></div>
+    </div>
+    <div class="section-body">
+      <div class="subsection"><div class="subsection-header"><div class="subsection-dot"></div><div class="subsection-title">Deal pipeline</div></div><div id="items-deal-pipeline"></div></div>
+      <div class="subsection"><div class="subsection-header"><div class="subsection-dot"></div><div class="subsection-title">Lead pipeline</div></div><div id="items-lead-pipeline"></div></div>
+    </div>
+  </div>
+
+  <div class="section" id="lifecycle">
+    <div class="section-hero">
+      <div class="section-hero-top">
+        <div class="section-hero-left">
+          <div class="section-hero-title">Lifecycle stages & handover</div>
+          <div class="section-hero-desc">Stage configuration, automation, and marketing/sales/CS handover criteria.</div>
+        </div>
+        <div class="section-grade-badge"><div class="section-grade-num" id="grade-lifecycle">—</div><div class="section-grade-lbl">Section grade</div></div>
+      </div>
+      <div class="exec-summary"><div class="exec-summary-label">Executive summary & recommendations</div><textarea class="exec-summary-text" data-section="lifecycle" placeholder="Summarise key findings and top recommendations for this section…" rows="3"></textarea></div>
+    </div>
+    <div class="section-body">
+      <div class="subsection"><div class="subsection-header"><div class="subsection-dot"></div><div class="subsection-title">Life cycle stages</div></div><div id="items-lc-stages"></div></div>
+      <div class="subsection"><div class="subsection-header"><div class="subsection-dot"></div><div class="subsection-title">Handover & SLAs</div></div><div id="items-handover"></div></div>
+    </div>
+  </div>
+
+  <div class="section" id="reporting">
+    <div class="section-hero">
+      <div class="section-hero-top">
+        <div class="section-hero-left">
+          <div class="section-hero-title">Reporting</div>
+          <div class="section-hero-desc">GTM performance framework, forecasting infrastructure, and pipeline health coverage.</div>
+        </div>
+        <div class="section-grade-badge"><div class="section-grade-num" id="grade-reporting">—</div><div class="section-grade-lbl">Section grade</div></div>
+      </div>
+      <div class="exec-summary"><div class="exec-summary-label">Executive summary & recommendations</div><textarea class="exec-summary-text" data-section="reporting" placeholder="Summarise key findings and top recommendations for this section…" rows="3"></textarea></div>
+    </div>
+    <div class="section-body">
+      <div class="subsection"><div class="subsection-header"><div class="subsection-dot"></div><div class="subsection-title">GTM performance</div></div><div id="items-gtm-perf"></div></div>
+      <div class="subsection"><div class="subsection-header"><div class="subsection-dot"></div><div class="subsection-title">Forecasting</div></div><div id="items-forecasting"></div></div>
+      <div class="subsection"><div class="subsection-header"><div class="subsection-dot"></div><div class="subsection-title">Revenue reporting</div></div><div id="items-revenue"></div></div>
+      <div class="subsection"><div class="subsection-header"><div class="subsection-dot"></div><div class="subsection-title">Pipeline health & capacity</div></div><div id="items-pipeline-health"></div></div>
+    </div>
+  </div>
+
+  <div class="section" id="datahealth">
+    <div class="section-hero">
+      <div class="section-hero-top">
+        <div class="section-hero-left">
+          <div class="section-hero-title">Data health</div>
+          <div class="section-hero-desc">Workflow hygiene, property quality, and correct object usage.</div>
+        </div>
+        <div class="section-grade-badge"><div class="section-grade-num" id="grade-datahealth">—</div><div class="section-grade-lbl">Section grade</div></div>
+      </div>
+      <div class="exec-summary"><div class="exec-summary-label">Executive summary & recommendations</div><textarea class="exec-summary-text" data-section="datahealth" placeholder="Summarise key findings and top recommendations for this section…" rows="3"></textarea></div>
+    </div>
+    <div class="section-body">
+      <div class="subsection"><div class="subsection-header"><div class="subsection-dot"></div><div class="subsection-title">Automation</div></div><div id="items-automation"></div></div>
+      <div class="subsection"><div class="subsection-header"><div class="subsection-dot"></div><div class="subsection-title">Properties</div></div><div id="items-properties"></div></div>
+      <div class="subsection"><div class="subsection-header"><div class="subsection-dot"></div><div class="subsection-title">Objects</div></div><div id="items-objects"></div></div>
+    </div>
+  </div>
+
+  <div class="section" id="billing">
+    <div class="section-hero">
+      <div class="section-hero-top">
+        <div class="section-hero-left">
+          <div class="section-hero-title">Licenses & credits</div>
+          <div class="section-hero-desc">Contact capacity, subscriptions, renewal dates, AI credits, and admin configuration.</div>
+        </div>
+        <div class="section-grade-badge"><div class="section-grade-num" id="grade-billing">—</div><div class="section-grade-lbl">Section grade</div></div>
+      </div>
+      <div class="exec-summary"><div class="exec-summary-label">Executive summary & recommendations</div><textarea class="exec-summary-text" data-section="billing" placeholder="Summarise key findings and top recommendations for this section…" rows="3"></textarea></div>
+    </div>
+    <div class="section-body"><div id="items-billing"></div></div>
+  </div>
+
+</div>
+
+<div class="save-bar" id="save-bar">Saving…</div>
+
+<script>
+// ── SUPABASE CONFIG ──────────────────────────────────────────
+const SUPABASE_URL = 'https://ngrcyprtoesvibfhjvx.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ncmN5cHJ0b2VzZHZpYmZoanZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3Mjc3NTksImV4cCI6MjA5NTMwMzc1OX0.vVDB-wdRu41GiIo5sX6KIcJIs30Ey7974azJaMDpLDU';
+const CLIENT_NAME = 'Position Green';
+const CLIENT_COLOR = '#003F39';
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let auditId = null;
+let saveTimeout = null;
+
+// ── AUDIT DATA ───────────────────────────────────────────────
+const DATA={
+  "deal-pipeline":[
+    {id:"dp1",label:"Deal and lead pipeline split in place",bp:"Separate deal and lead pipelines prevent stage confusion and enable accurate funnel reporting. Leads should live in the lead object; deals created only upon qualification."},
+    {id:"dp2",label:"First deal stage qualified enough to input deal amount and close date with 80%+ accuracy",bp:"If reps can't commit to amount/close date at stage 1, the pipeline data is unreliable. First stage should represent a clear buyer intent signal, not just a logged conversation."},
+    {id:"dp3",label:"Every deal stage represents a real progression in the buyer journey",bp:"Each stage should reflect a distinct buyer action or milestone — not internal rep activity. Compress or remove stages that represent internal steps only."},
+    {id:"dp4",label:"Entry & exit criteria defined per stage",bp:"Documented entry/exit criteria remove ambiguity and enable consistent stage progression across the team. Tie them to CRM mandatory fields."},
+    {id:"dp5",label:"Above & below the line activities logged",bp:"Above the line = activities that progress the deal. Below = admin. Separating these gives cleaner activity data for coaching and attribution."},
+    {id:"dp6",label:"Activity & attribution source logging active",bp:"Every deal should have a logged attribution source. Without this, you can't tie revenue back to campaigns or channels."},
+    {id:"dp7",label:"Mandatory fields & deal stage rules enforced",bp:"HubSpot deal stage properties can require fields before advancing. Use this to enforce data quality at the point of entry, not retroactively."},
+    {id:"dp8",label:"Pipeline automation: disqualification criteria set up",bp:"Disqualification workflows should move deals to a closed lost stage automatically when criteria are met (e.g. no activity for X days past close date)."}
+  ],
+  "lead-pipeline":[
+    {id:"lp1",label:"Every lead stage represents a real progression in the prospecting process",bp:"Lead stages should mirror the SDR/BDR motion: New → Attempting → Connected → Qualified. Remove any stages that reflect admin, not buyer progression."},
+    {id:"lp2",label:"Automation: New to Attempting",bp:"Auto-enrol new leads into sequences via workflow trigger. Reduces manual work and ensures no lead falls through the cracks."},
+    {id:"lp3",label:"Automation: Attempting to Connected",bp:"Trigger stage change on first reply or booked meeting. Tie to calendar integration or email reply for reliable data."},
+    {id:"lp4",label:"Disqualification: re-attempting lead for bad timing",bp:"Bad timing ≠ lost. A separate re-attempt lead or sequence triggered at a future date keeps the pipeline clean while preserving the contact."},
+    {id:"lp5",label:"Activity & attribution source logging on leads",bp:"Attribution on the lead object should mirror the deal object. Capture UTM source at lead creation and persist through to deal."}
+  ],
+  "lc-stages":[
+    {id:"lc1",label:"Default lifecycle stages in use or custom stages justified",bp:"Avoid creating custom lifecycle stages unless default ones genuinely don't fit. Custom stages break native HubSpot reporting. Document the rationale if overridden."},
+    {id:"lc2",label:"Lifecycle stage automations in place",bp:"Stages should advance automatically based on defined triggers — not manually updated by reps. Common triggers: deal stage, form submission, meeting booked."},
+    {id:"lc3",label:"Lifecycle stage values consistent and not degraded",bp:"HubSpot lifecycle stages are a funnel hierarchy. Check that stages aren't set backwards (e.g. SQL rolling back to MQL) which corrupts reporting."},
+    {id:"lc4",label:"Lifecycle stages put back when applicable",bp:"If a contact disqualifies, the stage should revert to the appropriate lower stage — not stay at a falsely advanced stage. Requires explicit workflow logic."}
+  ],
+  "handover":[
+    {id:"hw1",label:"SLAs between marketing and sales defined",bp:"Marketing → Sales SLA: e.g. MQL must be actioned within 2 business hours. Tracked via deal creation timestamp vs MQL timestamp."},
+    {id:"hw2",label:"SLAs between sales and CS defined",bp:"Closed Won → CS handover SLA: e.g. onboarding initiated within 24h. Tracked via deal stage change timestamp."},
+    {id:"hw3",label:"Handover criteria documented and enforced in HubSpot",bp:"Handover criteria should be reflected in mandatory fields or deal stage rules — not just a shared doc. If it's not in HubSpot, it won't be followed consistently."},
+    {id:"hw4",label:"Automations beneath handover criteria active and tested",bp:"Notify CS on Closed Won. Notify sales manager on MQL breach. These automations close the loop — check they're live and tested in production."}
+  ],
+  "gtm-perf":[
+    {id:"gp1",label:"Bowtie framework implemented for GTM performance",bp:"The bowtie model covers the full revenue journey: acquisition → conversion → expansion. Without it, reporting covers only the left side and misses retention/NRR."},
+    {id:"gp2",label:"Time, conversion and volume metrics defined and captured",bp:"Volume (# of leads/deals), conversion (% stage-to-stage), velocity (time-in-stage) — all three must be captured. Missing any one dimension makes the bowtie incomplete."},
+    {id:"gp3",label:"Targets connected to metrics in HubSpot",bp:"Goals/targets should be set inside HubSpot or connected via a BI layer. Metrics without targets can't drive accountability."},
+    {id:"gp4",label:"Reporting spans both sides of the bowtie (acquisition + retention)",bp:"Most HubSpot portals over-index on deal pipeline. Expansion and retention metrics (NRR, churn, upsell pipeline) must be actively tracked."}
+  ],
+  "forecasting":[
+    {id:"fc1",label:"Underlying data infrastructure correct for forecasting",bp:"Forecast accuracy depends on close dates, deal amounts, and stage data being current and trustworthy. Audit data hygiene before relying on native HubSpot forecasting."},
+    {id:"fc2",label:"Sales velocity tracked and visible",bp:"Sales velocity = (# deals × avg deal value × win rate) / sales cycle length. A key leading indicator. Set up as a calculated property or custom report."}
+  ],
+  "revenue":[
+    {id:"rv1",label:"MRR/ARR tracking in place (current or with historic snapshots)",bp:"Point-in-time MRR is table stakes. Historic snapshots via custom properties or a data warehouse enable trend analysis and cohort MRR reporting."},
+    {id:"rv2",label:"Revenue data coming in from billing platform with correct infrastructure",bp:"If using Stripe, Chargebee, or similar — verify the integration maps to HubSpot deal/contact correctly. Mismatched IDs break revenue attribution."},
+    {id:"rv3",label:"Measured vs goal line visible in reporting",bp:"Revenue dashboards should show actuals vs target as a standard view. Use HubSpot goals feature or a BI layer for this."}
+  ],
+  "pipeline-health":[
+    {id:"ph1",label:"Stale deal identification: deals not moving are flagged",bp:"Set a workflow to flag deals with no stage change in X days (varies by ACV/sales cycle). Surfaced in a dedicated pipeline health dashboard for managers."},
+    {id:"ph2",label:"Old deals with no attribution source flagged",bp:"Deals created without a source degrade reporting quality over time. Retroactive fix: bulk update via import, then enforce going forward with mandatory field."},
+    {id:"ph3",label:"Data infrastructure correct for pipeline health reporting",bp:"Pipeline health reports require accurate create dates, stage change timestamps, and owner assignments. Verify these are populated before building reports."},
+    {id:"ph4",label:"BDR lead capacity tracked (max capacity / sufficient coverage)",bp:"Max BDR capacity = (working hours × contact rate) / avg leads per meeting. Track against active lead pipeline to flag over/under capacity."},
+    {id:"ph5",label:"AE deal capacity tracked (max deals / sufficient coverage)",bp:"Max AE capacity = total stages × avg time-in-stage × number of AEs. Mismatch between pipeline volume and capacity is a leading indicator of missed targets."}
+  ],
+  "automation":[
+    {id:"au1",label:"Redundant workflows identified and documented",bp:"Run a workflow audit: sort by last modified and enrollment count. Workflows with 0 enrollments in 90+ days are candidates for archiving."},
+    {id:"au2",label:"High-risk / harmful workflows identified and reviewed",bp:"Workflows that delete records, change lifecycle stages in bulk, or send external emails carry high risk. These should have a named owner and be reviewed quarterly."}
+  ],
+  "properties":[
+    {id:"pr1",label:"Redundant properties cleaned up",bp:"Run a property usage report. Properties unused in 6+ months should be archived or deleted. Redundant properties create data entry confusion and degrade CRM adoption."},
+    {id:"pr2",label:"Property formatting consistent (naming, type, grouping)",bp:"Consistent naming convention (snake_case or Title Case — pick one), correct property types, and logical grouping improve usability and reporting reliability."}
+  ],
+  "objects":[
+    {id:"ob1",label:"Correct objects in use for the use case (lead vs deal object)",bp:"The lead object is for pre-qualification prospecting. The deal object is for qualified opportunities. Using deals for all leads inflates pipeline and degrades win rate data."},
+    {id:"ob2",label:"Object associations correct (contact + company linked)",bp:"Every contact should be associated with a company. Orphaned contacts break account-based reporting and ABM workflows. Run a contact audit to find unassociated records."}
+  ],
+  "billing":[
+    {id:"bi1",label:"Marketing contacts capacity: current usage vs limit reviewed",bp:"Track marketing contact usage monthly. HubSpot charges overage automatically. Set a workflow alert when usage hits 80% of tier limit."},
+    {id:"bi2",label:"All subscriptions and renewal dates documented",bp:"List all active HubSpot subscriptions, add-ons, and their renewal dates in a shared doc. Avoid unexpected renewals or gaps in coverage."},
+    {id:"bi3",label:"AI credit usage and needs assessed",bp:"Review AI credit consumption in Account settings. Identify which features drive usage (Breeze, AI assistants) and whether the current tier matches needs."},
+    {id:"bi4",label:"Correct billing admins and notifications configured",bp:"Billing notifications should go to finance + HubSpot admin, not just the original purchaser. Verify in Account settings > Billing."}
+  ]
+};
+
+const SECTION_ITEMS={
+  pipelines:['deal-pipeline','lead-pipeline'],
+  lifecycle:['lc-stages','handover'],
+  reporting:['gtm-perf','forecasting','revenue','pipeline-health'],
+  datahealth:['automation','properties','objects'],
+  billing:['billing']
+};
+
+const GRADE_COLORS={
+  1:{bg:'#FCEBEB',color:'#A32D2D'},
+  2:{bg:'#FAEEDA',color:'#854F0B'},
+  3:{bg:'#fff3e0',color:'#b45309'},
+  4:{bg:'#EAF3DE',color:'#3B6D11'},
+  5:{bg:'#E1F5EE',color:'#0F6E56'}
+};
+
+const grades={};
+
+// ── SAVE INDICATOR ───────────────────────────────────────────
+function showSave(msg='Saved'){
+  const bar=document.getElementById('save-bar');
+  bar.textContent=msg;
+  bar.classList.add('show');
+  clearTimeout(saveTimeout);
+  saveTimeout=setTimeout(()=>bar.classList.remove('show'),2000);
+}
+
+// ── GRADE STYLING ────────────────────────────────────────────
+function applySelectStyle(sel,v){
+  sel.style.fontSize='11px';
+  sel.style.fontWeight='600';
+  sel.style.fontFamily="'DM Sans',system-ui,sans-serif";
+  sel.style.padding='4px 10px';
+  sel.style.borderRadius='20px';
+  sel.style.minWidth='130px';
+  sel.style.cursor='pointer';
+  sel.style.outline='none';
+  if(v===0){
+    sel.style.background='rgba(0,63,57,.08)';
+    sel.style.color='#003F39';
+    sel.style.border='1px solid rgba(0,63,57,.25)';
+  } else {
+    const c=GRADE_COLORS[v];
+    sel.style.background=c.bg;
+    sel.style.color=c.color;
+    sel.style.border='none';
+  }
+}
+
+// ── SCORING ──────────────────────────────────────────────────
+function updateOverall(){
+  const allG=Object.values(grades).filter(v=>v>0);
+  const score=allG.length?(allG.reduce((a,b)=>a+b,0)/allG.length).toFixed(1)+'/5':'—';
+  document.getElementById('overall-score').textContent=score;
+  document.getElementById('overall-score-summary').textContent=score;
+}
+
+function updateSectionGrade(sectionId){
+  const groups=SECTION_ITEMS[sectionId];
+  const all=groups.flatMap(g=>DATA[g]).map(i=>grades[i.id]||0).filter(v=>v>0);
+  document.getElementById('grade-'+sectionId).textContent=all.length?(all.reduce((a,b)=>a+b,0)/all.length).toFixed(1)+'/5':'—';
+  updateOverall();
+}
+
+// ── SUPABASE HELPERS ─────────────────────────────────────────
+async function getOrCreateAudit(clientId){
+  const {data}=await db.from('audits').select('id,overall_summary').eq('client_id',clientId).maybeSingle();
+  if(data) return data;
+  const {data:created}=await db.from('audits').insert({client_id:clientId,overall_summary:''}).select().single();
+  return created;
+}
+
+async function getOrCreateClient(){
+  const {data}=await db.from('clients').select('id').eq('name',CLIENT_NAME).maybeSingle();
+  if(data) return data.id;
+  const {data:created}=await db.from('clients').insert({name:CLIENT_NAME,primary_color:CLIENT_COLOR}).select().single();
+  return created.id;
+}
+
+async function saveItem(itemId, sectionId, field, value){
+  if(!auditId) return;
+  const {data:existing}=await db.from('audit_items').select('id').eq('audit_id',auditId).eq('item_id',itemId).maybeSingle();
+  if(existing){
+    await db.from('audit_items').update({[field]:value,updated_at:new Date().toISOString()}).eq('id',existing.id);
+  } else {
+    await db.from('audit_items').insert({audit_id:auditId,item_id:itemId,section_id:sectionId,[field]:value});
+  }
+  showSave();
+}
+
+async function saveSectionSummary(sectionId, value){
+  if(!auditId) return;
+  // store section summaries as special audit_items with item_id = "summary__{sectionId}"
+  const itemId=`summary__${sectionId}`;
+  const {data:existing}=await db.from('audit_items').select('id').eq('audit_id',auditId).eq('item_id',itemId).maybeSingle();
+  if(existing){
+    await db.from('audit_items').update({gtm_notes:value,updated_at:new Date().toISOString()}).eq('id',existing.id);
+  } else {
+    await db.from('audit_items').insert({audit_id:auditId,item_id:itemId,section_id:sectionId,gtm_notes:value});
+  }
+  showSave();
+}
+
+async function saveOverallSummary(value){
+  if(!auditId) return;
+  await db.from('audits').update({overall_summary:value,updated_at:new Date().toISOString()}).eq('id',auditId);
+  showSave();
+}
+
+async function loadSavedData(){
+  if(!auditId) return;
+  const {data:items}=await db.from('audit_items').select('*').eq('audit_id',auditId);
+  if(!items) return;
+  items.forEach(row=>{
+    // section summaries
+    if(row.item_id.startsWith('summary__')){
+      const sectionId=row.item_id.replace('summary__','');
+      const ta=document.querySelector(`.exec-summary-text[data-section="${sectionId}"]`);
+      if(ta) ta.value=row.gtm_notes||'';
+      return;
+    }
+    // grades
+    if(row.grade>0){
+      grades[row.item_id]=row.grade;
+      const sel=document.querySelector(`select[data-item="${row.item_id}"]`);
+      if(sel){sel.value=row.grade;applySelectStyle(sel,row.grade);}
+      const sectionId=row.section_id;
+      updateSectionGrade(sectionId);
+    }
+    // gtm notes
+    if(row.gtm_notes){
+      const ta=document.querySelector(`textarea.note-input[data-item="${row.item_id}"]`);
+      if(ta) ta.value=row.gtm_notes;
+    }
+    // client notes
+    if(row.client_notes){
+      const ta=document.querySelector(`textarea.client-input[data-item="${row.item_id}"]`);
+      if(ta) ta.value=row.client_notes;
+      // auto-open if client has commented
+      const body=ta?.closest('.toggle-body');
+      if(body){
+        body.classList.add('open');
+        const btn=body.closest('.audit-item')?.querySelector('.expand-btn');
+        if(btn) btn.textContent='−';
+      }
+    }
+  });
+}
+
+// ── RENDER ───────────────────────────────────────────────────
+function renderItems(containerId,items,sectionId){
+  const container=document.getElementById(containerId);
+  if(!container)return;
+  items.forEach(item=>{
+    grades[item.id]=0;
+    const div=document.createElement('div');
+    div.className='audit-item';
+    div.innerHTML=`
+      <div class="audit-item-header">
+        <div class="audit-item-label">${item.label}</div>
+        <div class="grade-wrap">
+          <span class="grade-lbl">Grade</span>
+          <select class="grade-select" data-item="${item.id}" data-section="${sectionId}">
+            <option value="0">— Select —</option>
+            <option value="1">1 — Critical issue</option>
+            <option value="2">2 — Needs work</option>
+            <option value="3">3 — Partial</option>
+            <option value="4">4 — Good</option>
+            <option value="5">5 — Best practice</option>
+          </select>
+          <button class="expand-btn" aria-label="Toggle notes">+</button>
+        </div>
+      </div>
+      <div class="toggle-body">
+        <div class="audit-item-body">
+          <div class="audit-item-body-inner">
+            <div class="note-block">
+              <div class="note-block-header">
+                <div class="note-author-dot"></div>
+                <div class="note-label">GTM Collective — Comments, notes & links</div>
+              </div>
+              <textarea class="note-input" data-item="${item.id}" data-section="${sectionId}" placeholder="Add findings, links, recommendations…" rows="2"></textarea>
+            </div>
+            <div class="client-block">
+              <div class="client-block-header">
+                <div class="client-author-dot"></div>
+                <div class="client-note-label">Position Green — Comments & questions</div>
+              </div>
+              <textarea class="client-input" data-item="${item.id}" data-section="${sectionId}" placeholder="Add your comments or questions here…" rows="2"></textarea>
+            </div>
+            <div class="bp-box">
+              <div class="bp-label">Best practice</div>
+              <div class="bp-text">${item.bp}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    container.appendChild(div);
+
+    const sel=div.querySelector('select');
+    applySelectStyle(sel,0);
+    sel.addEventListener('change',e=>{
+      const v=parseInt(e.target.value);
+      grades[item.id]=v;
+      applySelectStyle(sel,v);
+      updateSectionGrade(sectionId);
+      saveItem(item.id,sectionId,'grade',v);
+    });
+
+    const noteTA=div.querySelector('.note-input');
+    let noteTimer;
+    noteTA.addEventListener('input',e=>{
+      clearTimeout(noteTimer);
+      noteTimer=setTimeout(()=>saveItem(item.id,sectionId,'gtm_notes',e.target.value),800);
+    });
+
+    const clientTA=div.querySelector('.client-input');
+    let clientTimer;
+    clientTA.addEventListener('input',e=>{
+      clearTimeout(clientTimer);
+      clientTimer=setTimeout(()=>saveItem(item.id,sectionId,'client_notes',e.target.value),800);
+    });
+
+    const btn=div.querySelector('.expand-btn');
+    const body=div.querySelector('.toggle-body');
+    btn.addEventListener('click',()=>{
+      const open=body.classList.toggle('open');
+      btn.textContent=open?'−':'+';
+    });
+  });
+}
+
+// ── SECTION SUMMARIES ────────────────────────────────────────
+document.querySelectorAll('.exec-summary-text').forEach(ta=>{
+  let t;
+  ta.addEventListener('input',e=>{
+    clearTimeout(t);
+    t=setTimeout(()=>saveSectionSummary(ta.dataset.section,e.target.value),800);
+  });
+});
+
+const overallTA=document.getElementById('overall-summary-input');
+let overallTimer;
+overallTA.addEventListener('input',e=>{
+  clearTimeout(overallTimer);
+  overallTimer=setTimeout(()=>saveOverallSummary(e.target.value),800);
+});
+
+// ── NAV ──────────────────────────────────────────────────────
+document.getElementById('nav').addEventListener('click',e=>{
+  const tab=e.target.closest('.nav-tab');
+  if(!tab)return;
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById(tab.dataset.section).classList.add('active');
+});
+
+// ── INIT ─────────────────────────────────────────────────────
+document.getElementById('audit-date').textContent=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+
+Object.entries(SECTION_ITEMS).forEach(([sid,groups])=>groups.forEach(g=>renderItems('items-'+g,DATA[g],sid)));
+
+(async()=>{
+  const clientId=await getOrCreateClient();
+  const audit=await getOrCreateAudit(clientId);
+  auditId=audit.id;
+  if(audit.overall_summary) overallTA.value=audit.overall_summary;
+  await loadSavedData();
+})();
+</script>
+</body>
+</html>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Position Green — HubSpot Portal Audit | GTM Collective</title>
